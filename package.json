@@ -1,0 +1,39 @@
+{
+  "name": "mangoost",
+  "version": "1.0.0",
+  "description": "Static site generator",
+  "main": "./dist/mangoost.js",
+  "scripts": {
+    "clean": "rimraf dist/**",
+    "build": "npm run clean && rollup -c rollup.config/base.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pretest": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igorovic/mangoost.git"
+  },
+  "author": "Dyve.ch <hello@dyve.ch>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/igorovic/mangoost/issues"
+  },
+  "homepage": "https://github.com/igorovic/mangoost#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^15.0.0",
+    "@rollup/plugin-node-resolve": "^9.0.0",
+    "@rollup/plugin-typescript": "^5.0.2",
+    "magic-string": "^0.25.7",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.25.0",
+    "shx": "^0.3.2",
+    "tslib": "^2.0.1",
+    "typescript": "^3.9.7"
+  },
+  "bin": {
+    "mgoost": "dist/bin/mgoost"
+  },
+  "files": [
+    "dist"
+  ]
+}
