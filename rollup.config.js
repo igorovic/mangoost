@@ -9,7 +9,21 @@ import addCliEntry from './build-plugins/add-cli-entry.js';
 import emitModulePackageFile from './build-plugins/emit-module-package-file.js';
 import pkg from './package.json';
 
-const external = Object.keys(pkg.dependencies || {});
+const external = [
+    //...Object.keys(pkg.dependencies || {}),
+    // node modules
+    'assert',
+    'crypto',
+    'events',
+    'fs',
+    'fsevents',
+    'module',
+    'path',
+    'os',
+    'stream',
+    'url',
+    'util'
+];
 
 const moduleAliases = {
 	resolve: ['.json', '.md'],
@@ -36,19 +50,20 @@ const nodePlugins = [
 export default [
 	{
         treeshake,
-        /* strictDeprecations: true,
-        exports: 'auto',
-        externalLiveBindings: false,
-        freeze: false, */
         output: {
             dir: 'dist',
-            format: 'cjs'
+            format: 'cjs',
+            /* strictDeprecations: true,
+            exports: 'auto',
+            externalLiveBindings: false,
+            freeze: false, */ 
+            
         },
 		plugins: [
             ...nodePlugins,
+            typescript({include: ["typings/**/*.d.ts", "src/**/*", "cli"]}),
             addCliEntry(),
             emitModulePackageFile(),
-            typescript({include: ["src/**/*", "typings/**/*.d.ts", "cli"]})
         ],
         external
 	}

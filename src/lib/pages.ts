@@ -1,10 +1,10 @@
-import * as path from 'path';
-import config from './config';
+import path from 'path';
 import { WalkSync } from './filesystem';
+import config from './config';
 
-
-
-export default function pages(){
+export function pages(){
     let Source = path.join(config.projectRoot, '/pages/');
     return WalkSync(Source);
 }
+
+

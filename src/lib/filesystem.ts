@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import fs from 'fs';
+import path from 'path';
 
 export function WalkSync(Path: string, prefix?: string, options={ignoreDirs: false}){
     let Files: string[] = [];
@@ -14,6 +14,6 @@ export function WalkSync(Path: string, prefix?: string, options={ignoreDirs: fal
         }
     })
     return Files;
-}
+};
 
-export default { WalkSync }
+//export default { WalkSync }

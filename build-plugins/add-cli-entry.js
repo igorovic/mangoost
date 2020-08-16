@@ -8,7 +8,7 @@ export default function addCliEntry() {
 				type: 'chunk',
 				id: 'cli/cli.ts',
 				fileName: 'bin/mgoost',
-				preserveSignature: false
+				preserveSignature: false,
 			});
 		},
 		renderChunk(code, chunkInfo) {

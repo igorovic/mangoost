@@ -1,6 +1,8 @@
 import { projectRootPath } from './utils';
 
-export default {
+export const config = {
     outDir: 'public',
     projectRoot: projectRootPath()
 }
+
+export default config;

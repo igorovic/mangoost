@@ -1,7 +1,9 @@
 import help from 'help.md';
 import { version } from '../package.json';
 import argParser from 'yargs-parser';
-import pages from '../src/lib/pages';
+import config from '../src/lib/config'
+//import { pages } from '../src/lib/pages';
+
 
 
 
@@ -15,14 +17,7 @@ if (command.help || (process.argv.length <= 2 && process.stdin.isTTY)) {
 } else if (command.version) {
 	console.log(`mangoost v${version}`);
 } else {
-	/* try {
-		require('source-map-support').install();
-	} catch (err) {
-		// do nothing
-	} */
-
-    //run(command);
 	console.log("Mangoost finished!");
-	console.log(pages());
-	
+	console.log(config);
+	//console.log(pages());
 }

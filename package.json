@@ -5,7 +5,7 @@
   "main": "./dist/mangoost.js",
   "scripts": {
     "clean": "rimraf dist/**",
-    "build": "npm run clean && rollup -c && tsc && shx chmod a+x dist/bin/mgoost",
+    "build": "npm run clean && tsc && rollup -c  && shx chmod a+x dist/bin/mgoost",
     "test": "echo \"Error: no test specified\" && exit 1",
     "pretest": "npm run build"
   },
@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "ejs": "^3.1.3",
-    "rollup": "^2.26.0"
+    "rollup": "^2.26.2"
   },
   "bin": {
     "mgoost": "dist/bin/mgoost"
