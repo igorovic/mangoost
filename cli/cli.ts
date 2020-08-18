@@ -1,10 +1,8 @@
 import help from 'help.md';
-import { version } from '../package.json';
+import { version } from 'package.json';
 import argParser from 'yargs-parser';
-import config from '../src/lib/config'
-//import { pages } from '../src/lib/pages';
 
-
+import run from './run';
 
 
 const command = argParser(process.argv.slice(2), {
@@ -17,7 +15,8 @@ if (command.help || (process.argv.length <= 2 && process.stdin.isTTY)) {
 } else if (command.version) {
 	console.log(`mangoost v${version}`);
 } else {
-	console.log("Mangoost finished!");
-	console.log(config);
-	//console.log(pages());
+	
+	run(command);
+	
 }
+console.log("Mangoost finished!");

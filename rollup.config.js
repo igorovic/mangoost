@@ -7,10 +7,11 @@ import json from '@rollup/plugin-json';
 import { string } from 'rollup-plugin-string';
 import addCliEntry from './build-plugins/add-cli-entry.js';
 import emitModulePackageFile from './build-plugins/emit-module-package-file.js';
+//import esmDynamicImport from './build-plugins/esm-dynamic-import.js'; 
 import pkg from './package.json';
 
 const external = [
-    //...Object.keys(pkg.dependencies || {}),
+    ...Object.keys(pkg.dependencies || {}),
     // node modules
     'assert',
     'crypto',
@@ -44,15 +45,18 @@ const nodePlugins = [
     resolve(), 
     json(),
     string({ include: '**/*.md' }),
-    commonjs({ include: 'node_modules/**' }), 
+    typescript({tsconfig: "tsconfig.cli.json"}), 
+    commonjs({ include: 'node_modules/**'}),  
 ]
 
 export default [
-	{
+    {   //input: 'cli/cli.ts',
+        
         treeshake,
         output: {
             dir: 'dist',
             format: 'cjs',
+            //file: 'dist/bin/mgoost'
             /* strictDeprecations: true,
             exports: 'auto',
             externalLiveBindings: false,
@@ -60,12 +64,36 @@ export default [
             
         },
 		plugins: [
+            //addCliEntry(),
             ...nodePlugins,
-            typescript({include: ["typings/**/*.d.ts", "src/**/*", "cli"]}),
+            //@rollup/plugin-typescript
+           
             addCliEntry(),
+            // typescript2
+            //tsconfigOverride: {
+            //    typescript({
+            //        compilerOptions: {
+            //            include: ["global.d.ts", "typings/**/*.d.ts", "src/**/*", "cli"], 
+            //            module: 'ES2015',
+            //            resolveJsonModule: true
+            //        }
+            //    }
+            //}),
+            
+            //esmDynamicImport(),
             emitModulePackageFile(),
+            
         ],
         external
-	}
+    }/* ,
+    {
+        output: {
+            dir: 'dist'
+        },
+        plugins: [
+            ...nodePlugins,
+            emitModulePackageFile(),
+        ]
+    } */
 
 ];

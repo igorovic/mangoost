@@ -2,11 +2,10 @@
   "compilerOptions": {
     "pretty": true,
     "diagnostics": true,
-    "declaration": true,
     "outDir": "dist",
     "target": "es2018", 
     "moduleResolution": "node",
-    "module": "commonjs",                     
+    "module": "esnext",                     
     "sourceMap": true,                     
     "strict": true,                          
     "noUnusedLocals": true,                
@@ -14,10 +13,12 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,                   
     "forceConsistentCasingInFileNames": true,
+    
   },
   "include": [
     "typings/**/*.d.ts",
     "src",
+    "cli"
   ],
   "exclude": [
     "node_modules", "dist"

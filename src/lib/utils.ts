@@ -1,12 +1,18 @@
 import * as path from 'path';
-//import * as childProcess from 'child_process';
+import { AxiosRequestConfig } from 'axios';
+import { Element } from "domhandler";
 
 export function projectRootPath(){
-    //let globalNodeModules = childProcess.execSync('npm root').toString().trim();
-    //return path.join(globalNodeModules, '..');
     return path.join("/", ...path.resolve('package.json').split(path.sep).slice(0,-1));
 }
 
-export default {
-    projectRootPath
+export function MangoostTagToAxios(element: Element){
+    if(element.attribs){
+        return <AxiosRequestConfig>{
+            url: element.attribs.url,
+            method: element.attribs.method || 'GET'
+        }
+    }else{
+        return {};
+    }
 }

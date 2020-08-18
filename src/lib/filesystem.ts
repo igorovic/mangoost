@@ -1,9 +1,10 @@
-import fs from 'fs';
-import path from 'path';
+import { readdirSync } from 'fs';
+import * as path from 'path';
 
 export function WalkSync(Path: string, prefix?: string, options={ignoreDirs: false}){
     let Files: string[] = [];
-    let Listing = fs.readdirSync(Path, {withFileTypes: true});
+    let Listing = readdirSync(Path, {withFileTypes: true});
+    
     Listing.forEach(item => {
         if(!item.isDirectory()){
             Files.push(prefix ? path.join(prefix, item.name) : item.name)
@@ -16,4 +17,13 @@ export function WalkSync(Path: string, prefix?: string, options={ignoreDirs: fal
     return Files;
 };
 
-//export default { WalkSync }
+export function listDirectories(Path: string){
+    let dirs: string[] = [];
+    let Listing = readdirSync(Path, {withFileTypes: true});
+    Listing.forEach(item => {
+        if(item.isDirectory()){
+            dirs.push(item.name)
+        }
+    })
+    return dirs;
+}

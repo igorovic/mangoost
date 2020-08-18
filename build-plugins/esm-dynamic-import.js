@@ -4,7 +4,8 @@ export default function addBinShebangAndEsmImport() {
 		name: 'esm-dynamic-import',
 		renderDynamicImport({ moduleId }) {
 			importFound = true;
-			if (moduleId.endsWith('loadConfigFile.ts')) {
+			console.log("DEBUG", moduleId)
+			if (moduleId.endsWith('mangoost.ts')) {
 				return { left: 'import(', right: ')' };
 			}
 		},
