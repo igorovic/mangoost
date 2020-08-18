@@ -11,7 +11,7 @@ export default async function runMangoost(command: any){
         await creatDirectories();
     }else if(command.build){
         let pages = listPages();
-        let pending = pages.map(async (page) => renderPage(page));
+        let pending = pages.map(async (page) => await renderPage(page));
         await Promise.all(pending);
     }
 }

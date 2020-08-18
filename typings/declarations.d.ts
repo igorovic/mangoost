@@ -22,7 +22,8 @@ declare namespace Mangoost {
 
 	declare interface MangoostTemplateOptions extends EjsOptions{
 		target_html?: string,
-		outDir?: string
+		outDir?: string,
+		filename?: string
 	}
 
 	declare interface MangoostTags {

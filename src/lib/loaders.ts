@@ -1,17 +1,21 @@
 import * as fs from 'fs';
-import * as htmlparser2 from 'htmlparser2';
-import { findAll } from "domutils";
-import { Parser } from "htmlparser2";
-import { cache } from 'ejs'
+//import * as htmlparser2 from 'htmlparser2';
+
 import axios from 'axios';
-import { Element } from "domhandler";
-import { MangoostTagToAxios } from './utils';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { Element } from "domhandler";
+//import { findAll } from "domutils";
+import { cache } from 'ejs'
+//import { Parser } from "htmlparser2";
+import MangoostParser from '../dom/parser';
+import { MangoostTagToAxios } from './utils';
+
 
 
 export function MangoostFileLoader(filePath: string){
-    let ejsFile = fs.readFileSync(filePath, {encoding: 'utf8'}).toString();
-    let mangoostElements = '';
+    const ejsFile = fs.readFileSync(filePath, {encoding: 'utf8'}).toString();
+    const { template, data } = MangoostParser(ejsFile)
+    /* let mangoostElements = '';
     let cleanEjsFile = '';
     let Mangoost: Mangoost.MangoostTags = {};
 
@@ -36,8 +40,8 @@ export function MangoostFileLoader(filePath: string){
     const parser = new Parser(handler, {recognizeSelfClosing: true});
     parser.write(mangoostElements);
     parser.end();
-    cache.set('MangoostTags:'.concat(filePath), Mangoost);
-    return cleanEjsFile;
+    cache.set('MangoostTags:'.concat(filePath), Mangoost); */
+    return { template, data};
 }
 
 interface ApiData {
@@ -48,7 +52,7 @@ interface ApiData {
 }
 
 function loadProcessEnv(){
-    let Envs: any = {};
+    const Envs: any = {};
     Object.keys(process.env).forEach( k => {
         if(k.startsWith('MGOOST-') || k.startsWith('MGOOST_')){
             Envs[k.slice('MGOOST-'.length, k.length)] = process.env[k]
@@ -58,15 +62,15 @@ function loadProcessEnv(){
 }
 
 export async function MangoostDataLoader(filePath: string, initialData: Mangoost.TemplateData){
-    let R: ApiData = {...initialData, MgoostApi: {}, MgoostEnv: loadProcessEnv()}
-    let Mangoost = cache.get('MangoostTags:'.concat(filePath));
-    let Queries = Mangoost[filePath].map( (Qr: Element) => MangoostTagToAxios(Qr) );
-    let pending = Queries.map( (Q: AxiosRequestConfig) => {
+    const R: ApiData = {...initialData, MgoostApi: {}, MgoostEnv: loadProcessEnv()}
+    const Mangoost = cache.get('MangoostTags:'.concat(filePath));
+    const Queries = Mangoost[filePath].map( (Qr: Element) => MangoostTagToAxios(Qr) );
+    const pending = Queries.map( (Q: AxiosRequestConfig) => {
         if(Object.keys(Q).includes("url")){
             return axios(Q)
         }
     });
-    let results: AxiosResponse[] = await Promise.all(pending);
+    const results: AxiosResponse[] = await Promise.all(pending);
     results.forEach( (r: AxiosResponse) => {
         R.MgoostApi[r.config.url || 'undefined'] = r.data;
     })
