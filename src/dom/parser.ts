@@ -33,6 +33,7 @@ import { Parser } from "htmlparser2";
     }
 } */
 
+
 const ejsElements = new Set([
     "%=",
     "%-",
@@ -52,8 +53,8 @@ export default function MangoostParser(document: string){
                 }else if(ejsElements.has(name)){
                     template += '<'+name+' ';
                     template += Object.entries(attribs).map(a => a[0]).join(' ');
+                    parser._tokenizer._buffer.substr(parser._tokenizer._index, 100)
                     parser.onclosetag(name)
-                    
                 }else{
                     const entries = Object.entries(attribs);
                     const at =""
@@ -66,7 +67,9 @@ export default function MangoostParser(document: string){
                     
                 }
             },
-            
+            /* onattribute(name, value) {
+                console.log("name", name, "value", value)
+            }, */
             ontext(text) {
                 template += text;
             },
@@ -78,7 +81,7 @@ export default function MangoostParser(document: string){
                 }
             }
         },
-        { decodeEntities: true , recognizeSelfClosing: true, xmlMode: true}
+        { decodeEntities: false , recognizeSelfClosing: true, xmlMode: true}
     );
     
     parser.write(
