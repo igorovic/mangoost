@@ -1,7 +1,8 @@
 import { Parser } from "htmlparser2";
 //import { Parser } from "htmlparser2/Parser";
 
-class MgParser extends Parser{
+
+/* class MgParser extends Parser{
     onopentagname(name: string) {
         if (this._lowerCaseTagNames) {
             name = name.toLowerCase();
@@ -30,7 +31,15 @@ class MgParser extends Parser{
         this._cbs.onopentagname?.(name);
         if (this._cbs.onopentag) this._attribs = {};
     }
-}
+} */
+
+const ejsElements = new Set([
+    "%=",
+    "%-",
+    "%#",
+    "%",
+    "%_",
+]);
 
 export default function MangoostParser(document: string){
     let template = "";
@@ -40,6 +49,11 @@ export default function MangoostParser(document: string){
             onopentag(name, attribs) {
                 if(name.startsWith('mg:')){
                     data = {name: "Petrovic"};
+                }else if(ejsElements.has(name)){
+                    template += '<'+name+' ';
+                    template += Object.entries(attribs).map(a => a[0]).join(' ');
+                    parser.onclosetag(name)
+                    
                 }else{
                     const entries = Object.entries(attribs);
                     const at =""
@@ -57,12 +71,16 @@ export default function MangoostParser(document: string){
                 template += text;
             },
             onclosetag(tagname) {
-                template += "</"+tagname+">";
+                if(ejsElements.has(tagname)){
+                    template += '>';
+                }else{
+                    template += "</"+tagname+">";
+                }
             }
         },
-        { decodeEntities: true , recognizeSelfClosing: true}
+        { decodeEntities: true , recognizeSelfClosing: true, xmlMode: true}
     );
-    parser.open
+    
     parser.write(
         document
     );
