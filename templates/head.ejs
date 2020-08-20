@@ -1,0 +1,25 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="<%= description; %>">
+<meta name="keywords" content="<%= keywords; %>">
+<meta http-equiv="Content-Language" content="<%= contentLanguage; %>">
+<link rel="shortcut icon" href="<%= shortcutIcon %>">
+<link rel="sitemap" href="<%= sitemapHref; %>" type="application/xml" title="Sitemap" />
+<% if(locals.replyTo){ %>
+<meta http-equiv="Reply-to" content="<%= replyTo; %>">
+<% } %>
+
+<title><%= title || ""; %></title>
+<meta property="og:title"              content="<%= title || ""; %>" />
+
+<% if(Object.keys(locals).includes('og:type')) { %>
+    <meta property="og:type"               content="<%= locals['og:type'] || ""; %>" />
+<% } %>
+<% if(Object.keys(locals).includes('og:locale')) { %>
+    <meta property="og:locale" content="<%= locals['og:locale'] || ""; %>" />
+<% } %>
+<% if(Object.keys(locals).includes('og:url')) { %>
+    <meta property="og:url"                content="<%- locals['og:url'] || ""; %>" />
+<% } %>
+<link rel="canonical" href="<%= canonical || ""; %>" />
+

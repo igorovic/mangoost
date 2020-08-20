@@ -1,14 +1,16 @@
+import Debug from 'debug';
 import * as path from 'path';
 
 import config from './config';
-import { /* MangoostDataLoader,  */MangoostFileLoader } from './loaders';
+import { MangoostDataLoader, MangoostFileLoader } from './loaders';
 
 import { compile } from 'ejs';
 import { outputFile } from 'fs-extra';
 import { minify } from 'html-minifier';
 import { WalkSync } from './filesystem';
 
-
+const debug = Debug('pages');
+const debug2 = Debug('rendered')
 
 const production =  !(process.env.NODE_ENV == 'dev');
 
@@ -43,22 +45,22 @@ async function render(filename: string, data: Mangoost.TemplateData={}, options:
         options.root = path.join(config.projectRoot);
     }
     if(!Object.keys(options).includes('filename')){
-        // required by ejs for cahche keys and includes
+        // required by ejs for cache keys and includes
         options.filename = filename;
     }
-    const {template: tmpl, data: myData} = MangoostFileLoader(filename);
+    const {template: tmpl, data: MangoostData} = MangoostFileLoader(filename, options);
     const template = compile(tmpl, options);
-    data = {...data, ...myData} //await MangoostDataLoader(filename, data);
-    console.log("pages", data)
+    data = await MangoostDataLoader(data, MangoostData);
+    debug(data)
     let html = template(data);
-    console.log("pages html", html)
+    debug2(html)
     
     if ( production ){
         html = minify(html, minify_options);
     }
     outputFile(target_html, html, function (err: any) {
         if (err) {
-            console.log(err);
+            console.error(err);
         }else{
             console.log(target_html + ' created!');
         }

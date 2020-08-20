@@ -6,11 +6,13 @@ declare module 'package.json'{
 	const str: string;
 	export default str;
 }
+
 declare module 'ejs';
 declare module 'html-minifier';
 declare module 'fs-extra';
 
 /* import { Element } from "domhandler";
+import { AxiosRequestConfig } from 'axios';
 export { Element } from "domhandler"; */
 
 
@@ -31,5 +33,8 @@ declare namespace Mangoost {
 	}
 	declare interface TemplateData {
 		[key: string]: any
+	}
+	declare interface MangoostData {
+		[s:string]: string | object | string[] | object[] | AxiosRequestConfig
 	}
 }

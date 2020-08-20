@@ -1,37 +1,13 @@
-//import { compile } from "ejs";
+import { AxiosRequestConfig } from 'axios';
+import Debug from 'debug';
 import { Parser } from "htmlparser2";
 
+import { head } from '../components';
+import { cache } from '../lib/cache';
 
-/* class MgParser extends Parser{
-    onopentagname(name: string) {
-        if (this._lowerCaseTagNames) {
-            name = name.toLowerCase();
-        }
-        this._tagname = name;
-        if (
-            !this._options.xmlMode &&
-            Object.prototype.hasOwnProperty.call(openImpliesClose, name)
-        ) {
-            for (
-                let el;
-                openImpliesClose[name]?.has(
-                    (el = this._stack[this._stack.length - 1])
-                );
-                this.onclosetag(el)
-            );
-        }
-        if (this._options.xmlMode || !voidElements.has(name)) {
-            this._stack.push(name);
-            if (foreignContextElements.has(name)) {
-                this._foreignContext.push(true);
-            } else if (htmlIntegrationElements.has(name)) {
-                this._foreignContext.push(false);
-            }
-        }
-        this._cbs.onopentagname?.(name);
-        if (this._cbs.onopentag) this._attribs = {};
-    }
-} */
+
+const debug = Debug('MangoostParser');
+
 // voidElements copied from htmlparser2
 const voidElements = new Set([
     "area",
@@ -64,15 +40,50 @@ const ejsElements = new Set([
     "%_",
 ]);
 
-function adornEjsOpenDelimiters(document: string){
-    // this technics makes the htmlparser2 think that ejs tags are processinginstructions
-    return document.split('<%').join('<!%');
+// found in EJS source code
+const EJS_DEFAULT_OPEN_DELIMITER = '<';
+const EJS_DEFAULT_CLOSE_DELIMITER = '>';
+const EJS_DEFAULT_DELIMITER = '%';
+
+interface Delimiters {
+    delimiter: string,
+    openDelimiter: string,
+    closeDelimiter: string
+}
+
+function adornEjsOpenDelimiters(document: string, delimiters: Delimiters){
+    /*
+    *  tricks htmlparser2 thinking that ejs tags are html `processinginstructions`
+    */
+   const {
+        delimiter,
+        openDelimiter,
+        closeDelimiter
+    } = delimiters;
+    if(
+        (openDelimiter && openDelimiter !== EJS_DEFAULT_OPEN_DELIMITER) || 
+        (closeDelimiter && closeDelimiter !== EJS_DEFAULT_CLOSE_DELIMITER)
+    ){
+        // This is because htmlparser2 expects valid dom tags
+        throw Error("Mangoost can only handle default open '<' and close '>' delimiters for EJS");
+    }
+    const openToken = (openDelimiter || EJS_DEFAULT_OPEN_DELIMITER) + (delimiter || EJS_DEFAULT_DELIMITER)  // should give '<%'
+    const replacement = (openDelimiter || EJS_DEFAULT_OPEN_DELIMITER) + '!' + (delimiter || EJS_DEFAULT_DELIMITER) // should give '<!%'
+    cache.set('ejsMangoostDelimiter', replacement);
+    cache.set('ejsMangoostOpenToken', openToken);
+    // replace opening delimiter in the original file
+    return document.split(openToken).join(replacement);
 }
 
 function domAttributes(attribs: {[s: string]: string}){
     let attributes = ""
     Object.keys(attribs).forEach(a => {
-        attributes += a +'="'+ attribs[a] +'" ';
+        if(attribs[a] && attribs[a].length > 0){
+            attributes += a +'="'+ attribs[a] +'" ';
+        }else{
+            // standalone attribute without value
+            attributes += a +' ';
+        }
     })
     return attributes;
 }
@@ -92,30 +103,91 @@ function domTag(name: string, attribs: {[s: string]: string}){
     return elem;
 }
 
+function MangoostTagToAxios(data: Mangoost.MangoostData): AxiosRequestConfig{
+    if(data){
+        return {
+            auth:               data.auth ? JSON.parse(data.auth) : undefined,
+            data:               data.data ? JSON.parse(data.data) : undefined,
+            headers:            data.headers ? JSON.parse(data.headers) : undefined,
+            maxContentLength:   data.maxContentLength || undefined,
+            maxRedirects:       data.maxRedirects || undefined,
+            method:             data.method || 'GET',
+            params:             data.params ? JSON.parse(data.params) : undefined,
+            proxy:              data.proxy ? JSON.parse(data.proxy) : undefined,
+            responseEncoding:   data.responseEncoding || undefined,
+            responseType:       data.responseType || undefined,
+            timeout:            data.timeout || undefined,
+            url:                data.url,
+            withCredentials:    data.withCredentials || undefined,
+            xsrfCookieName:     data.xsrfCookieName || undefined,
+            xsrfHeaderName:     data.xsrfHeaderName || undefined
+            
+        } as AxiosRequestConfig;
+    }else{
+        return {};
+    }
+}
+
+
 const enum State {
     inDom,
     inMgData,
     inMgHead
 }
 
-export default function MangoostParser(document: string){
-    let template = "";
-    const data: {[key:string]: string} = {};
-    let _state = State.inDom;
 
-    // This parser extracts only <mg:data> tags
+
+
+export default function MangoostParser(document: string, delimiters: Delimiters){
+    let template = "";
+    const data: Mangoost.MangoostData = {};
+    let _state = State.inDom;
+    const parentsTree: string[] = []
+
+    /*
+    *   This parser compiles an ejs template which includes Mangoost extension tags
+    */
     const parserMangoostData = new Parser(
         {
             onopentag(name, attribs) {
-                console.log("open tag", name);
+                debug("open tag", name);
+                debug("parentsTree", parentsTree)
+                parentsTree.push(name);
+                let id = null;
+                let values = null;
                 if(name === 'mg:data'){
                     _state = State.inMgData;
-                    Object.entries(attribs).forEach( entry => data[entry[0]] = entry[1])
+                    const hasId = attribs.id && attribs.id.length > 0;
+                    const hasUrl = attribs.url && attribs.url.length > 0;
+                    // Define the id
+                    if(hasId) {
+                        id = attribs.id;
+                        delete attribs.id;
+                    }else if (hasUrl) {
+                        id = attribs.url;
+                    }
+
+                    // extract the values
+                    if(hasUrl){
+                        values = MangoostTagToAxios(attribs);
+                    }else{
+                        values = attribs;
+                    }
+
+                    // set data
+                    if(id){
+                        data[id] = values;
+                    }else{
+                        Object.entries(attribs).forEach( entry => data[entry[0]] = entry[1])
+                    }
+                    
+
                 }else if(name === 'mg:head'){
                     _state = State.inMgHead;
-                    template += domTag(name, attribs);
+                    template += head(attribs); //domTag(name, attribs);
                 }
                 else{
+                    // standard dom tag
                     template += domTag(name, attribs)
                 }
             },
@@ -126,14 +198,16 @@ export default function MangoostParser(document: string){
                 if(name.slice(0,2) === '!%'){
                     template += '<'+data.slice(1, data.length)+'>';
                 }else{
-                    console.log(data)
+                    debug(data)
                     template += '<'+data+'>';
                 }
             },
             onclosetag(tagname) {
-                console.log("close tag", tagname)
+                debug("close tag", tagname)
+                parentsTree.pop();
+
                 if(
-                    !tagname.startsWith('mg:data') &&
+                    !tagname.startsWith('mg:') &&
                     !ejsElements.has(tagname.slice(1, tagname.length)) &&
                     !voidElements.has(tagname)
                 ){
@@ -143,8 +217,8 @@ export default function MangoostParser(document: string){
                     // selfclosing tag
                     template += ' />'
                 }
-                // Handling Magoost Templates tags
-
+                // Handling Mangoost Templates tags
+                /* code here */
                 // Changing state
                 switch( tagname ){
                     case 'mg:data':
@@ -161,11 +235,11 @@ export default function MangoostParser(document: string){
     );
     
     parserMangoostData.write(
-        adornEjsOpenDelimiters(document)
+        adornEjsOpenDelimiters(document, delimiters)
     );
     parserMangoostData.end();
-
-    //console.log("parser", data)
-    //console.log(template)
+    debug(_state);
+    debug(data)
+    //debug(template)
     return {template, data}
 }

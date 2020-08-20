@@ -1,4 +1,4 @@
-import { readdirSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import * as path from 'path';
 
 export function WalkSync(Path: string, prefix?: string, options={ignoreDirs: false}){
@@ -26,4 +26,8 @@ export function listDirectories(Path: string){
         }
     })
     return dirs;
+}
+
+export function readFile(filePath: string){
+    return readFileSync(filePath, {encoding: 'utf8'}).toString();
 }

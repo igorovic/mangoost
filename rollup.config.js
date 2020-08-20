@@ -6,9 +6,12 @@ import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import { string } from 'rollup-plugin-string';
 import addCliEntry from './build-plugins/add-cli-entry.js';
+import copyTemplates from './build-plugins/copy-files.js';
 import emitModulePackageFile from './build-plugins/emit-module-package-file.js';
-//import esmDynamicImport from './build-plugins/esm-dynamic-import.js'; 
 import pkg from './package.json';
+
+const production = !process.env.NODE_ENV;
+console.log("production", production);
 
 const external = [
     ...Object.keys(pkg.dependencies || {}),
@@ -23,11 +26,15 @@ const external = [
     'os',
     'stream',
     'url',
-    'util'
+    'util',
+    'lru-cache',
+    'object-sizeof',
+    'debug'
 ];
 
+
 const moduleAliases = {
-	resolve: ['.json', '.md'],
+	resolve: ['.json', '.md', '.ejs'],
 	entries: [
 		{ find: 'help.md', replacement: path.resolve('cli/help.md') },
 		{ find: 'package.json', replacement: path.resolve('package.json') },
@@ -40,13 +47,15 @@ const treeshake = {
 	tryCatchDeoptimization: false
 };
 
+
 const nodePlugins = [
     alias(moduleAliases),
     resolve(), 
     json(),
-    string({ include: '**/*.md' }),
+    string({ include: ['**/*.md', '**/*.ejs'] }),
     typescript({tsconfig: "tsconfig.cli.json"}), 
     commonjs({ include: 'node_modules/**'}),  
+    
 ]
 
 export default [
@@ -81,7 +90,9 @@ export default [
             //}),
             
             //esmDynamicImport(),
+            
             emitModulePackageFile(),
+            copyTemplates(),
             
         ],
         external
