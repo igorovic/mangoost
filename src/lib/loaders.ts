@@ -15,6 +15,7 @@ import { MangoostTagToAxios } from './utils';
 export function MangoostFileLoader(filePath: string){
     const ejsFile = fs.readFileSync(filePath, {encoding: 'utf8'}).toString();
     const { template, data } = MangoostParser(ejsFile)
+    console.log("loaders", data)
     /* let mangoostElements = '';
     let cleanEjsFile = '';
     let Mangoost: Mangoost.MangoostTags = {};

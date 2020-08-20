@@ -48,9 +48,10 @@ async function render(filename: string, data: Mangoost.TemplateData={}, options:
     }
     const {template: tmpl, data: myData} = MangoostFileLoader(filename);
     const template = compile(tmpl, options);
-    data = {...data, myData} //await MangoostDataLoader(filename, data);
-    console.log(data)
+    data = {...data, ...myData} //await MangoostDataLoader(filename, data);
+    console.log("pages", data)
     let html = template(data);
+    console.log("pages html", html)
     
     if ( production ){
         html = minify(html, minify_options);
