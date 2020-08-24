@@ -3,7 +3,7 @@ import { join } from 'path';
 import { config } from './config';
 import { listDirectories } from '../lib/filesystem';
 
-const ExpectedDirecotires = ["public", "pages", "styles", "javascripts"];
+const ExpectedDirecotires = ["public", "pages", "styles", "javascripts", "static"];
 
 export async function creatDirectories(){
     let dirs = listDirectories(config.projectRoot);

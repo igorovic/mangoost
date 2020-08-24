@@ -8,7 +8,8 @@
     "ts:defs": "tsc --declaration --outDir dist --emitDeclarationOnly",
     "build": "npm run clean && tsc && rollup -c  && shx chmod a+x dist/bin/mgoost",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "pretest": "npm run build"
+    "pretest": "npm run build",
+    "postinstall": "patch-package"
   },
   "repository": {
     "type": "git",
@@ -48,7 +49,9 @@
     "htmlparser2": "^4.1.0",
     "lru-cache": "^6.0.0",
     "object-sizeof": "^1.6.1",
-    "rollup": "^2.26.2"
+    "patch-package": "^6.2.2",
+    "rollup": "^2.26.2",
+    "sapper": "^0.28.0"
   },
   "bin": {
     "mgoost": "dist/bin/mgoost"

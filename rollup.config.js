@@ -29,7 +29,10 @@ const external = [
     'util',
     'lru-cache',
     'object-sizeof',
-    'debug'
+    'debug',
+    'sapper/dist/build',
+    'sapper/dist/export',
+    'sapper/dist/index'
 ];
 
 

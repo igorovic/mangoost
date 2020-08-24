@@ -1,0 +1,27 @@
+diff --git a/node_modules/sapper/dist/create_manifest_data.js b/node_modules/sapper/dist/create_manifest_data.js
+index e17f7fc..53d9508 100644
+--- a/node_modules/sapper/dist/create_manifest_data.js
++++ b/node_modules/sapper/dist/create_manifest_data.js
+@@ -1304,6 +1304,8 @@ function create_manifest_data(cwd, extensions = '.svelte .html') {
+ 				const is_dir = fs.statSync(resolved).isDirectory();
+ 
+ 				const ext = path.extname(basename);
++				// Mangoost - sapper should ignore .html and .ejs files
++				if(ext === '.ejs' || ext === '.html' ) return null
+ 				
+ 				if (basename[0] === '_') return null;
+ 				if (basename[0] === '.' && basename !== '.well-known') return null;
+diff --git a/node_modules/sapper/dist/export.js b/node_modules/sapper/dist/export.js
+index 1b7c60d..e5da155 100644
+--- a/node_modules/sapper/dist/export.js
++++ b/node_modules/sapper/dist/export.js
+@@ -1797,7 +1797,8 @@ async function _export({
+ 	export_dir = path.resolve(cwd, export_dir, basepath);
+ 
+ 	// Prep output directory
+-	fs_utils.rimraf(export_dir);
++	// output directory cleansing is handled by Mangoost
++	// fs_utils.rimraf(export_dir);
+ 
+ 	fs_utils.copy(static_files, export_dir);
+ 	fs_utils.copy(path.join(build_dir, 'client'), path.join(export_dir, 'client'));

@@ -10,6 +10,10 @@ declare module 'package.json'{
 declare module 'ejs';
 declare module 'html-minifier';
 declare module 'fs-extra';
+declare module 'sapper/dist/build';
+declare module 'sapper/dist/export';
+declare module 'sapper/dist/index';
+declare module 'sapper/dist/env';
 
 /* import { Element } from "domhandler";
 import { AxiosRequestConfig } from 'axios';

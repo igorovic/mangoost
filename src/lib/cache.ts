@@ -1,4 +1,4 @@
-import LRU from 'lru-cache';
+import * as LRU from 'lru-cache'; // import with * has better compatibility
 import sizeof from 'object-sizeof';
 
 const options = {
