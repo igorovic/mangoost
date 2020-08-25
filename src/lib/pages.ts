@@ -26,11 +26,11 @@ const minify_options = {
 
 
 export function listPages(){
-    const Source = path.join(config.projectRoot, '/pages/');
+    const Source = path.join(config.projectRoot, config.pages);
     return WalkSync(Source);
 }
 
-function output_path_for_html_files(filename: string, public_dir="public"){
+function output_path_for_html_files(filename: string, public_dir=config.outDir){
     const filePath = filename.replace(path.join(config.projectRoot, 'pages'), "");
     const dir = path.dirname(filePath).split(path.sep);
     const fname = path.basename(filename, path.extname(filename)); // filename without extension
@@ -70,7 +70,7 @@ async function render(filename: string, data: Mangoost.TemplateData={}, options:
 }
 
 export async function renderPage(filename: string, data: Mangoost.TemplateData={}, options: Mangoost.MangoostTemplateOptions={}): Promise<string>{
-    const srcFile = path.join(config.projectRoot, 'pages', filename);
+    const srcFile = path.join(config.projectRoot, config.pages, filename);
     return await render(srcFile, data, options);
 }
 
