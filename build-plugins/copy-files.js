@@ -22,7 +22,7 @@ export default function copyFiles() {
 	return {
 		name: 'copy-files',
 		generateBundle() {
-            const projectRoot = join("/", ...resolve('package.json').split(sep).slice(0,-1));
+            const projectRoot = join(...resolve('package.json').split(sep).slice(0,-1));
             const srcDir = join(projectRoot, 'templates');
             const dstDir = join(projectRoot, 'dist/templates');
             const Files = WalkSync(srcDir);
