@@ -20,11 +20,11 @@ export async function build(){
         bundler: 'rollup',
         cwd: config.projectRoot,
         export_dir: config.outDir,
-        ext: '.sve',
+        ext: '.sve .svelte',
         legacy: false,
-        output: '@sapper',
-        routes: 'pages',
-        src: '.'
+        //output: '@sapper',
+        //routes: 'pages',
+        //src: 'src'
     }
     try {
         
