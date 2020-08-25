@@ -1,13 +1,14 @@
-import { mkdir } from 'fs';
+import { exec } from 'child_process';
 import { join } from 'path';
+import { mkdir } from 'fs';
+
 import { config } from './config';
 import { listDirectories } from '../lib/filesystem';
 
-const ExpectedDirecotires = ["public", "pages", "styles", "javascripts", "static"];
 
 export async function creatDirectories(){
     let dirs = listDirectories(config.projectRoot);
-    ExpectedDirecotires.forEach( dir => {
+    config.ExpectedDirecotires.forEach( dir => {
         if(!dirs.includes(dir)){
             let dirPath = join(config.projectRoot, dir)
             console.log("Creating directory", dirPath);
@@ -16,4 +17,16 @@ export async function creatDirectories(){
             });
         }
     })
+}
+
+export async function init(){
+    exec('npx degit "sveltejs/sapper-template#rollup" .', {cwd: config.projectRoot}, async (error, stdout, stderr) => {
+        if (error) {
+          console.error(`exec error: ${error}`);
+          return;
+        }
+        console.log(`stdout: ${stdout}`);
+        console.error(`stderr: ${stderr}`);
+        await creatDirectories();
+    });
 }
