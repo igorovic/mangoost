@@ -21,6 +21,6 @@
     "cli"
   ],
   "exclude": [
-    "node_modules", "dist"
+    "node_modules", "dist", "src/rollup-plugins/**/*"
   ]
 }

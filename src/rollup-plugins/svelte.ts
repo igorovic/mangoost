@@ -1,0 +1,361 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import * as relative from 'require-relative';
+import { version } from 'svelte/package.json';
+import { createFilter } from 'rollup-pluginutils';
+import { encode, decode } from 'sourcemap-codec';
+
+/* TYPES */
+import { Plugin, NormalizedOutputOptions, OutputBundle } from 'rollup';
+
+const major_version = +version[0];
+const pkg_export_errors = new Set();
+
+const { compile, preprocess } = major_version >= 3
+	? require('svelte/compiler.js')
+	: require('svelte');
+
+function sanitize(input: string) {
+	return path
+		.basename(input)
+		.replace(path.extname(input), '')
+		.replace(/[^a-zA-Z_$0-9]+/g, '_')
+		.replace(/^_/, '')
+		.replace(/_$/, '')
+		.replace(/^(\d)/, '_$1');
+}
+
+function capitalize(str: string) {
+	return str[0].toUpperCase() + str.slice(1);
+}
+
+/* interface PluginOptions{
+	include?: Array<string | RegExp> | string | RegExp | null;
+	exclude?: Array<string | RegExp> | string | RegExp | null;
+	options?: { resolve?: string | false | null }
+} */
+
+interface PluginOptions{
+	[s: string]: boolean
+}
+
+const pluginOptions: PluginOptions = {
+	include: true,
+	exclude: true,
+	extensions: true,
+	emitCss: true,
+	preprocess: true,
+
+	// legacy — we might want to remove/change these in a future version
+	onwarn: true,
+	shared: true
+};
+
+function tryRequire(id: string) {
+	try {
+		return require(id);
+	} catch (err) {
+		return null;
+	}
+}
+
+function tryResolve(pkg: string, importer: string) {
+	try {
+		return relative.resolve(pkg, importer);
+	} catch (err) {
+		if (err.code === 'MODULE_NOT_FOUND') return null;
+		if (err.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED') {
+			pkg_export_errors.add(pkg.replace(/\/package.json$/, ''));
+			return null;
+		}
+		throw err;
+	}
+}
+
+function exists(file: string) {
+	try {
+		fs.statSync(file);
+		return true;
+	} catch (err) {
+		if (err.code === 'ENOENT') return false;
+		throw err;
+	}
+}
+
+type EmitFunction = (fileName: string, source: any) => void;
+
+class CssWriter {
+	code: string;
+	filename: string;
+	emit: EmitFunction;
+	warn: any;
+	map: any;
+
+	constructor(code: string, filename: string, map: any, warn: any, toAsset: any) {
+		this.code = code;
+		this.filename = filename;
+		this.emit = toAsset;
+		this.warn = warn;
+		this.map = {
+			version: 3,
+			file: null,
+			sources: map.sources,
+			sourcesContent: map.sourcesContent,
+			names: [],
+			mappings: map.mappings
+		};
+	};
+
+	write(dest = this.filename, map: {[s:string]: any} | Boolean) {
+		const basename = path.basename(dest);
+
+		if (map !== false) {
+			this.emit(dest, `${this.code}\n/*# sourceMappingURL=${basename}.map */`);
+			this.emit(`${dest}.map`, JSON.stringify({
+				version: 3,
+				file: basename,
+				sources: this.map.sources.map((source: string) => path.relative(path.dirname(dest), source)),
+				sourcesContent: this.map.sourcesContent,
+				names: [],
+				mappings: this.map.mappings
+			}, null, 2));
+		} else {
+			this.emit(dest, this.code);
+		}
+	}
+
+	toString() {
+		this.warn("[DEPRECATION] As of rollup-plugin-svelte@3, the argument to the `css` function is an object, not a string — use `css.write(file)`. Consult the documentation for more information: https://github.com/rollup/rollup-plugin-svelte");
+		return this.code;
+	}
+}
+
+export default function svelte(options: {[s:string]: any} = {}): Plugin {
+	const filter = createFilter(options.include, options.exclude);
+
+	const extensions = options.extensions || ['.html', '.svelte'];
+
+	const fixed_options: {[s:string]: any} = {};
+
+	Object.keys(options).forEach(key => {
+		// add all options except include, exclude, extensions, and shared
+		if (pluginOptions[key]) return;
+		fixed_options[key] = options[key];
+	});
+
+	if (major_version >= 3) {
+		fixed_options.format = 'esm';
+		fixed_options.sveltePath = options.sveltePath || 'svelte';
+	} else {
+		fixed_options.format = 'es';
+		fixed_options.shared = require.resolve(options.shared || 'svelte/shared.js');
+	}
+
+	// handle CSS extraction
+	if ('css' in options) {
+		if (typeof options.css !== 'function' && typeof options.css !== 'boolean') {
+			throw new Error('options.css must be a boolean or a function');
+		}
+	}
+
+	let css = options.css && typeof options.css === 'function'
+		? options.css
+		: null;
+
+	const cssLookup = new Map();
+
+	if (css || options.emitCss) {
+		fixed_options.css = false;
+	}
+
+	return {
+		name: 'svelte',
+
+		load(id: string) {
+			if (!cssLookup.has(id)) return null;
+			return cssLookup.get(id);
+		},
+
+		resolveId(importee: string, importer?: string) {
+			if (cssLookup.has(importee)) { return importee; }
+			if (!importer || importee[0] === '.' || importee[0] === '\0' || path.isAbsolute(importee))
+				return null;
+
+			// if this is a bare import, see if there's a valid pkg.svelte
+			const parts = importee.split('/');
+			let name = parts.shift();
+			if (name && name[0] === '@') name += `/${parts.shift()}`;
+
+			const resolved = tryResolve(
+				`${name}/package.json`,
+				path.dirname(importer)
+			);
+			if (!resolved) return null;
+			const pkg = tryRequire(resolved);
+			if (!pkg) return null;
+
+			const dir = path.dirname(resolved);
+
+			if (parts.length === 0) {
+				// use pkg.svelte
+				if (pkg.svelte) {
+					return path.resolve(dir, pkg.svelte);
+				}
+			} else {
+				if (pkg['svelte.root']) {
+					// TODO remove this. it's weird and unnecessary
+					const sub = path.resolve(dir, pkg['svelte.root'], parts.join('/'));
+					if (exists(sub)) return sub;
+				}
+			}
+		},
+
+		transform(code: string, id: string) {
+			if (!filter(id)) return null;
+
+			const extension = path.extname(id);
+
+			if (!~extensions.indexOf(extension)) return null;
+
+			const dependencies: string[] = [];
+			let preprocessPromise;
+			if (options.preprocess) {
+				if (major_version < 3) {
+					const preprocessOptions: {[s:string]: any} = {};
+					for (const key in options.preprocess) {
+						preprocessOptions[key] = (...args: any[]) => {
+							return Promise.resolve(options.preprocess[key](...args)).then(
+								resp => {
+									if (resp && resp.dependencies) {
+										dependencies.push(...resp.dependencies);
+									}
+									return resp;
+								}
+							);
+						};
+					}
+					preprocessPromise = preprocess(
+						code,
+						Object.assign(preprocessOptions, { filename: id })
+					).then((code:any) => code.toString());
+				} else {
+					preprocessPromise = preprocess(code, options.preprocess, {
+						filename: id
+					}).then((processed: any) => {
+						if (processed.dependencies) {
+							dependencies.push(...processed.dependencies);
+						}
+						return processed.toString();
+					});
+				}
+			} else {
+				preprocessPromise = Promise.resolve(code);
+			}
+
+			return preprocessPromise.then((code: any) => {
+				let warnings = [];
+
+				const base_options = major_version < 3
+					? {
+						onwarn: (warning: any) => warnings.push(warning)
+					}
+					: {};
+
+				const compiled = compile(
+					code,
+					Object.assign(base_options, fixed_options, {
+						filename: id
+					}, major_version >= 3 ? null : {
+						name: capitalize(sanitize(id))
+					})
+				);
+
+				if (major_version >= 3) warnings = compiled.warnings || compiled.stats.warnings;
+
+				warnings.forEach((warning: any) => {
+					if ((options.css || !options.emitCss) && warning.code === 'css-unused-selector') return;
+
+					if (options.onwarn) {
+						options.onwarn(warning, (warning: string) => this.warn(warning));
+					} else {
+						this.warn(warning);
+					}
+				});
+
+				if ((css || options.emitCss) && compiled.css.code) {
+					let fname = id.replace(new RegExp(`\\${extension}$`), '.css');
+
+					if (options.emitCss) {
+						const source_map_comment = `/*# sourceMappingURL=${compiled.css.map.toUrl()} */`;
+						compiled.css.code += `\n${source_map_comment}`;
+
+						//compiled.js.code += `\nimport ${JSON.stringify(fname)};\n`;
+					}
+
+					cssLookup.set(fname, compiled.css);
+				}
+
+				if (this.addWatchFile) {
+					dependencies.forEach(dependency => this.addWatchFile(dependency));
+				} else {
+					compiled.js.dependencies = dependencies;
+				}
+
+				return compiled.js;
+			});
+		},
+		generateBundle(_: NormalizedOutputOptions, bundle: OutputBundle) {
+			if (css) {
+				// write out CSS file. TODO would be nice if there was a
+				// a more idiomatic way to do this in Rollup
+				let result = '';
+
+				const mappings = [];
+				const sources = [];
+				const sourcesContent = [];
+
+				const chunks = Array.from(cssLookup.keys()).sort().map(key => cssLookup.get(key));
+
+				for (let chunk of chunks) {
+					if (!chunk.code) continue;
+					result += chunk.code + '\n';
+
+					if (chunk.map) {
+						const i = sources.length;
+						sources.push(chunk.map.sources[0]);
+						sourcesContent.push(chunk.map.sourcesContent[0]);
+
+						const decoded = decode(chunk.map.mappings);
+
+						if (i > 0) {
+							decoded.forEach((line: any) => {
+								line.forEach((segment: any) => {
+									segment[1] = i;
+								});
+							});
+						}
+
+						mappings.push(...decoded);
+					}
+				}
+
+				const filename = Object.keys(bundle)[0].split('.').shift() + '.css';
+
+				const writer = new CssWriter(result, filename, {
+					sources,
+					sourcesContent,
+					mappings: encode(mappings)
+				}, this.warn, (fileName: string, source: string | Uint8Array) => {
+					this.emitFile({ type: 'asset', fileName, source });
+				});
+
+				css(writer);
+			}
+
+			if (pkg_export_errors.size < 1) return;
+
+			console.warn('\nrollup-plugin-svelte: The following packages did not export their `package.json` file so we could not check the `svelte` field. If you had difficulties importing svelte components from a package, then please contact the author and ask them to export the package.json file.\n');
+			console.warn(Array.from(pkg_export_errors).map(s => `- ${s}`).join('\n') + '\n');
+		}
+	};
+};

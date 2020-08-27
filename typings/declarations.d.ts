@@ -1,3 +1,4 @@
+
 declare module 'help.md' {
 	const str: string;
 	export default str;
@@ -10,10 +11,16 @@ declare module 'package.json'{
 declare module 'ejs';
 declare module 'html-minifier';
 declare module 'fs-extra';
-declare module 'sapper/dist/build';
-declare module 'sapper/dist/export';
-declare module 'sapper/dist/index';
-declare module 'sapper/dist/env';
+declare module 'svelte';
+declare module 'sourcemap-codec';
+
+/* declare module 'sourcemap-codec'{
+	type SourceMapSegment = [number] | [number, number, number, number] | [number, number, number, number, number];
+	type SourceMapLine = SourceMapSegment[];
+	type SourceMapMappings = SourceMapLine[];
+	export function encode(decoded: SourceMapMappings): SourceMapMappings ;
+	export function decode(mappings: string): string;
+}; */
 
 /* import { Element } from "domhandler";
 import { AxiosRequestConfig } from 'axios';

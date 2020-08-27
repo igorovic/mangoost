@@ -14,10 +14,11 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,                   
     "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
   },
   "include": [
     "typings/**/*.d.ts",
-    "src",
+    "src"
   ],
   "exclude": [
     "node_modules", "dist"

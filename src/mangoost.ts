@@ -1,7 +1,7 @@
-import { build as sapperBuild } from 'sapper/dist/build';
+/* import { build as sapperBuild } from 'sapper/dist/build';
 import { export as sapperExport } from 'sapper/dist/export';
 import { kleur } from 'sapper/dist/index';
-
+ */
 
 
 import { config } from './lib/config';
@@ -9,7 +9,7 @@ import { listPages/* , renderPage */ } from './lib/pages';
 
 //export { renderPage, listPages } from './lib/pages';
 export {MangoostFileLoader, MangoostDataLoader} from './lib/loaders';
-export { rollup } from './config/rollup';
+//export { rollup } from './config/rollup';
 
 export async function build(){
     let pages = listPages();
@@ -26,7 +26,8 @@ export async function build(){
         //routes: 'pages',
         //src: 'src'
     }
-    try {
+    console.log(opts);
+    /* try {
         
         console.log(`> Building...`);
         await sapperBuild(opts);
@@ -53,6 +54,6 @@ export async function build(){
         console.error(kleur.bold().red(`> ${err.message}`));
         console.error(err);
         process.exit(1);
-    };
+    }; */
 
 }
