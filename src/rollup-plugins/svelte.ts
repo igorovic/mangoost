@@ -8,6 +8,7 @@ import { encode, decode } from 'sourcemap-codec';
 /* TYPES */
 import { Plugin, NormalizedOutputOptions, OutputBundle } from 'rollup';
 
+
 const major_version = +version[0];
 const pkg_export_errors = new Set();
 
@@ -29,11 +30,7 @@ function capitalize(str: string) {
 	return str[0].toUpperCase() + str.slice(1);
 }
 
-/* interface PluginOptions{
-	include?: Array<string | RegExp> | string | RegExp | null;
-	exclude?: Array<string | RegExp> | string | RegExp | null;
-	options?: { resolve?: string | false | null }
-} */
+
 
 interface PluginOptions{
 	[s: string]: boolean
@@ -351,7 +348,10 @@ export default function svelte(options: {[s:string]: any} = {}): Plugin {
 
 				css(writer);
 			}
-
+			
+			
+			
+			
 			if (pkg_export_errors.size < 1) return;
 
 			console.warn('\nrollup-plugin-svelte: The following packages did not export their `package.json` file so we could not check the `svelte` field. If you had difficulties importing svelte components from a package, then please contact the author and ask them to export the package.json file.\n');
