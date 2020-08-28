@@ -13,6 +13,7 @@ declare module 'html-minifier';
 declare module 'fs-extra';
 declare module 'svelte';
 declare module 'sourcemap-codec';
+declare module 'require-from-string';
 
 /* declare module 'sourcemap-codec'{
 	type SourceMapSegment = [number] | [number, number, number, number] | [number, number, number, number, number];
