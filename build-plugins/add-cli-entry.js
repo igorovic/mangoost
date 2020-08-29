@@ -13,6 +13,7 @@ export default function addCliEntry() {
 		},
 		renderChunk(code, chunkInfo) {
 			if (chunkInfo.fileName === 'bin/mgoost') {
+				code = code.replace("require('mangoost')", "require('../mangoost')");
 				const magicString = new MagicString(code);
 				//magicString.remove(0, "'use strict';\n".length);
 				//magicString.prepend();

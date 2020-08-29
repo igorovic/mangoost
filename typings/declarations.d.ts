@@ -1,4 +1,4 @@
-
+declare module 'mangoost';
 declare module 'help.md' {
 	const str: string;
 	export default str;
@@ -14,6 +14,10 @@ declare module 'fs-extra';
 declare module 'svelte';
 declare module 'sourcemap-codec';
 declare module 'require-from-string';
+declare module 'rollup/dist/shared/mergeOptions';
+
+declare module 'mangoost/dist/rollup-plugins/svelte';
+declare module 'mangoost/dist/rollup-plugins/svelte-ssr'
 
 /* declare module 'sourcemap-codec'{
 	type SourceMapSegment = [number] | [number, number, number, number] | [number, number, number, number, number];

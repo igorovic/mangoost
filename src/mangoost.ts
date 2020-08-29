@@ -6,6 +6,7 @@ import { kleur } from 'sapper/dist/index';
 
 import { config } from './lib/config';
 import { listPages/* , renderPage */ } from './lib/pages';
+import { build as MangoostBuild } from './lib/build';
 
 //export { renderPage, listPages } from './lib/pages';
 export {MangoostFileLoader, MangoostDataLoader} from './lib/loaders';
@@ -27,6 +28,7 @@ export async function build(){
         //src: 'src'
     }
     console.log(opts);
+    await MangoostBuild()
     /* try {
         
         console.log(`> Building...`);

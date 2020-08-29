@@ -1,9 +1,9 @@
 import { config as dotenvConfig } from 'dotenv';
 import { join } from 'path';
 
+import { build } from 'mangoost';
 import { config } from '../src/lib/config';
 import { init } from '../src/lib/init-project';
-import { build } from '../src/mangoost';
 
 
 //import { listPages, renderPage } from '../src/lib/pages';

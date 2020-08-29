@@ -5,7 +5,8 @@
     "outDir": "dist",
     "target": "es2018", 
     "moduleResolution": "node",
-    "module": "esnext",                     
+    "module": "esnext",
+    "esModuleInterop": false, 
     "sourceMap": true,                     
     "strict": true,                          
     "noUnusedLocals": true,                
@@ -13,7 +14,7 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,                   
     "forceConsistentCasingInFileNames": true,
-    
+    "resolveJsonModule": true,
   },
   "include": [
     "typings/**/*.d.ts",
@@ -21,6 +22,6 @@
     "cli"
   ],
   "exclude": [
-    "node_modules", "dist", "src/rollup-plugins/**/*"
+    "node_modules", "dist"
   ]
 }

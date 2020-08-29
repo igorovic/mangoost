@@ -1,9 +1,16 @@
+/*
+** Rollup config to build the CLI
+*/
 import path from 'path';
 import alias from '@rollup/plugin-alias';
+
+/* rollup plugins */
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
+//import replace from '@rollup/plugin-replace';
+
 import { string } from 'rollup-plugin-string';
 import addCliEntry from './build-plugins/add-cli-entry.js';
 import copyTemplates from './build-plugins/copy-files.js';
@@ -32,7 +39,12 @@ const external = [
     'debug',
     'sapper/dist/build',
     'sapper/dist/export',
-    'sapper/dist/index'
+    'sapper/dist/index',
+    'rollup',
+    'rollup/dist/shared/mergeOptions',
+    /* '../rollup-plugins/svelte-ssr',
+    '../rollup-plugins/svelte' */
+    'mangoost'
 ];
 
 
@@ -40,7 +52,8 @@ const moduleAliases = {
 	resolve: ['.json', '.md', '.ejs'],
 	entries: [
 		{ find: 'help.md', replacement: path.resolve('cli/help.md') },
-		{ find: 'package.json', replacement: path.resolve('package.json') },
+        { find: 'package.json', replacement: path.resolve('package.json') },
+        //{find: 'mangoost', replacement: '../src/mangoost'}
 	]
 };
 
@@ -53,6 +66,10 @@ const treeshake = {
 
 const nodePlugins = [
     alias(moduleAliases),
+    /* replace({
+        //'../rollup-plugins/svelte': './rollup-plugins/svelte',
+        //'../rollup-plugins/svelte-ssr': './rollup-plugins/svelte-ssr'
+    }), */
     resolve(), 
     json(),
     string({ include: ['**/*.md', '**/*.ejs'] }),
