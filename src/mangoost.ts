@@ -4,7 +4,7 @@ import { kleur } from 'sapper/dist/index';
  */
 
 
-import { config } from './lib/config';
+//import { config } from './lib/config';
 import { listPages/* , renderPage */ } from './lib/pages';
 import { build as MangoostBuild } from './lib/build';
 
@@ -17,7 +17,7 @@ export async function build(){
     console.log(pages);
     //let pending = pages.map(async (page) => await renderPage(page));
     //await Promise.all(pending);
-    const opts = {
+    /* const opts = {
         bundler: 'rollup',
         cwd: config.projectRoot,
         export_dir: config.outDir,
@@ -27,7 +27,7 @@ export async function build(){
         //routes: 'pages',
         //src: 'src'
     }
-    console.log(opts);
+    console.log(opts); */
     await MangoostBuild()
     /* try {
         

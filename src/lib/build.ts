@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { outputFileSync } from 'fs-extra';
 
 import axios from 'axios';
+import jsdom from "jsdom";
 
 import { basename, join } from 'path';
 import requireFromString from 'require-from-string';
@@ -9,6 +10,8 @@ import { rollup } from 'rollup';
 
 //import * as mergeOptions from 'rollup/dist/shared/mergeOptions';
 
+
+const { JSDOM } = jsdom;
 
 /* rollup plugins */
 import babel from '@rollup/plugin-babel';
@@ -32,6 +35,8 @@ const legacy = !!process.env.MANGOOST_LEGACY_BUILD;
 const appEntryPoint = join(config.projectRoot, './src/pages/', 'index.js');
 const pageEntryPoint = join(config.projectRoot, './src/pages/', 'index.svelte');
 const template = readFileSync(join(config.projectRoot, './src/', 'template.html'), 'utf-8');
+
+console.log("DEV", dev);
 
 const plugins = [
     commonjs(),
@@ -67,6 +72,12 @@ const ssrPlugins = [
         hydratable: true,
         generate: 'ssr'
     }),
+    /* svelteSSR({
+        css: false,
+        dev: true,
+        generate: 'ssr',
+        hydratable: true
+    }), */
     resolve({
         browser: false,
         dedupe: ['svelte']
@@ -114,7 +125,7 @@ async function pageApp(){
 
 async function renderPage(){
     const ssrInputOptions = {
-        input: pageEntryPoint,
+        input: appEntryPoint,
         plugins: ssrPlugins,
         preserveEntrySignatures: true,
     }
@@ -132,6 +143,9 @@ async function renderPage(){
         head: ''
     };
     try{
+        const dom = await JSDOM.fromFile(join(config.projectRoot, './src/', 'template.html'));
+        //@ts-ignore
+        const document = dom.window.document;
         const page = requireFromString(output[0].code, basename(pageEntryPoint), {appendPaths: join(config.projectRoot, './node_modules')});
         let DATA = {};
         if(page.initialData){

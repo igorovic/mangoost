@@ -1,65 +1,151 @@
-import { join, basename, extname } from 'path';
-import { config } from '../lib/config';
-import { readFileSync } from 'fs';
+ import fs from 'fs';
+ import path from 'path';
+ import relative from 'require-relative';
+/*import { config } from '../lib/config';
+import { readFileSync } from 'fs'; */
 //import * as requireFromString from 'require-from-string';
 //import { compile } from 'svelte/compiler';
+import { createFilter } from 'rollup-pluginutils';
 
-import { listPages } from '../lib/pages';
+const { compile } = require('svelte/compiler.js');
 
 //import { CompileOptions } from 'svelte/types/compiler/interfaces';
 
 
 /* TYPES */
-import { Plugin, NormalizedOutputOptions, OutputBundle } from 'rollup';
-//import { Module } from 'module' // this is only for typescript declaration in @types/node/module.d.ts
+import { NormalizedOutputOptions, OutputBundle, Plugin } from 'rollup';
 
-const Pages = listPages().filter(p => p.endsWith('.svelte'));
-const template = readFileSync(join(config.projectRoot, './src/', 'template.html'), 'utf-8');
 
-/* function capitalise(name: string) {
-	return name[0].toUpperCase() + name.slice(1);
-} */
+const pkg_export_errors = new Set();
 
-export default function svelteSSR(_: {[s:string]: any} = {}): Plugin {
+function tryRequire(id: string) {
+	try {
+		return require(id);
+	} catch (err) {
+		return null;
+	}
+}
+
+function tryResolve(pkg: string, importer: string) {
+	try {
+		return relative.resolve(pkg, importer);
+	} catch (err) {
+		if (err.code === 'MODULE_NOT_FOUND') return null;
+		if (err.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED') {
+			pkg_export_errors.add(pkg.replace(/\/package.json$/, ''));
+			return null;
+		}
+		throw err;
+	}
+}
+
+function exists(file: string) {
+	try {
+		fs.statSync(file);
+		return true;
+	} catch (err) {
+		if (err.code === 'ENOENT') return false;
+		throw err;
+	}
+}
+
+const pluginOptions = [
+	'include',
+	'exclude',
+	'extensions',
+];
+
+export default function svelteSSR(options: {[s:string]: any} = {}): Plugin {
+    const filter = createFilter(options.include, options.exclude);
+
+    const extensions = options.extensions || ['.html', '.svelte'];
     
+    const fixed_options: {[s:string]: any} = {};
+
+    Object.keys(options).forEach(key => {
+		// add all options except include, exclude, extensions, and shared
+		if (pluginOptions.includes(key)) return;
+		fixed_options[key] = options[key];
+    });
+    
+    const componentsLookup = new Map();
+
     return {
-		name: 'svelte-ssr',
-		buildStart() {
-            for (const p of Pages){
-                if(p.endsWith('.svelte')){
-                    this.emitFile({
-                        type: 'chunk',
-                        id: join(config.projectRoot, './src/pages/', p)
-                    });
-                }
-            }
+        name: 'svelte-ssr',
+        
+        load(id: string) {
+			if (!componentsLookup.has(id)) return null;
+			return componentsLookup.get(id);
+		},
+		resolveId(importee: string, importer?: string) {
+			if (componentsLookup.has(importee)) { return importee; }
+			if (!importer || importee[0] === '.' || importee[0] === '\0' || path.isAbsolute(importee))
+				return null;
+
+			// if this is a bare import, see if there's a valid pkg.svelte
+			const parts = importee.split('/');
+			let name = parts.shift();
+			if (name && name[0] === '@') name += `/${parts.shift()}`;
+
+			const resolved = tryResolve(
+				`${name}/package.json`,
+				path.dirname(importer)
+			);
+			if (!resolved) return null;
+			const pkg = tryRequire(resolved);
+			if (!pkg) return null;
+
+			const dir = path.dirname(resolved);
+
+			if (parts.length === 0) {
+				// use pkg.svelte
+				if (pkg.svelte) {
+					return path.resolve(dir, pkg.svelte);
+				}
+			} else {
+				if (pkg['svelte.root']) {
+					// TODO remove this. it's weird and unnecessary
+					const sub = path.resolve(dir, pkg['svelte.root'], parts.join('/'));
+					if (exists(sub)) return sub;
+				}
+			}
         },
+        transform(code: string, id: string) {
+			if (!filter(id)) return null;
+
+			const extension = path.extname(id);
+
+			if (!~extensions.indexOf(extension)) return null;
+
+			const dependencies: string[] = [];
+			let warnings: any = [];
+            const compiled = compile(
+                code,
+                {
+                    ...fixed_options,
+                    filename: id
+                }
+            );
+            warnings = compiled.warnings ? compiled.warnings : [];
+
+            warnings.forEach((warning: any) => {
+                if (options.onwarn) {
+                    options.onwarn(warning, (warning: string) => this.warn(warning));
+                } else {
+                    this.warn(warning);
+                }
+            });
+
+            if (this.addWatchFile) {
+                dependencies.forEach(dependency => this.addWatchFile(dependency));
+            } else {
+                compiled.js.dependencies = dependencies;
+            }
+
+			return compiled.js;
+		},
         generateBundle(_: NormalizedOutputOptions, bundle: OutputBundle) {
             console.log(Object.keys(bundle))
-            for (const page of Pages){
-                /* const options: CompileOptions = {
-                    filename: page,
-                    name: capitalise(basename(page, extname(page))),
-                    generate: 'ssr',
-                    format: 'cjs'
-                }; */
-        
-                //const { js/* , warnings */ } = compile(readFileSync(join(config.projectRoot, './src/pages/', page), 'utf-8'), options);
-                //const Paths: string[] = [];
-                //Paths.push(join(config.projectRoot, './src/pages/'));
-                //Paths.push(join(config.projectRoot, 'src'));
-
-                //const Component = requireFromString(js.code,  {prependPaths: Paths}).default;
-                const rendered = 'my html here'; //Component.render({name: "world"});
-
-                const source = template.replace('%mangoost.app%', '/bundle.js').replace('%mangoost.html%', rendered);
-
-                this.emitFile({
-                    type: 'asset', 
-                    fileName: basename(page, extname(page)) + ".html", 
-                    source
-                })
-            }
            
         }
 	};
