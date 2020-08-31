@@ -33,7 +33,7 @@ const mode = process.env.NODE_ENV;
 const dev = mode === 'development';
 const legacy = !!process.env.MANGOOST_LEGACY_BUILD;
 
-//const appEntryPoint = join(config.projectRoot, './src/pages/', 'index.js');
+//const appEntryPoint = join(config.projectRoot, './src/pages/', 'MangoostPageApp.js');
 const pageEntryPoint = join(config.projectRoot, './src/pages/', 'index.svelte');
 const template = readFileSync(join('node_modules/mangoost/templates/', 'default.html'), 'utf-8'); //readFileSync(join(config.projectRoot, './src/', 'template.html'), 'utf-8');
 
@@ -118,8 +118,8 @@ async function pageApp(){
     }
     const browserOutputOptions = {
         //exports: 'named',
-        //file: 'public/index.js',
-        dir: 'public',
+        file: 'public/index.js',
+        //dir: 'public',
         format: 'iife',
         name: 'app',
         sourcemap: true,
