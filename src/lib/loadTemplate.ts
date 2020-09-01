@@ -9,5 +9,5 @@ export function loadTemplate(){
     if(exists(projectTemplate)){
         return readFileSync(projectTemplate, 'utf-8');
     }
-    return readFileSync(join('node_modules/mangoost/templates/', 'default.html'), 'utf-8');
+    return readFileSync(join(__dirname, '../templates', 'default.html'), 'utf-8');
 }

@@ -16,6 +16,7 @@ declare module 'sourcemap-codec';
 declare module 'require-from-string';
 declare module 'rollup/dist/shared/mergeOptions';
 declare module 'rollup-plugin-svelte';
+declare module 'postcss-input-range';
 //declare module 'mangoost/dist/rollup-plugins/svelte';
 //declare module 'mangoost/dist/rollup-plugins/svelte-ssr';
 //declare module 'mangoost/dist/rollup-plugins/'

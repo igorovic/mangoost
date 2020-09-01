@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Debug from 'debug';
 import { outputFileSync } from 'fs-extra';
 import { basename, dirname, extname, join } from 'path';
 import requireFromString from 'require-from-string';
@@ -9,20 +10,28 @@ import babel from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
 import resolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
+import atImport from 'postcss-import';
 import postcss from 'rollup-plugin-postcss';
-import { terser } from 'rollup-plugin-terser';
-
 import svelte from 'rollup-plugin-svelte';
+import { terser } from 'rollup-plugin-terser';
+/* postcss plugins */
+import autoprefixer from 'autoprefixer';
+import postcssInputRange from 'postcss-input-range';
+import postcssUrl from 'postcss-url';
+
 //import svelte from '../rollup-plugins/svelte';
 import addSveltePageApp from '../rollup-plugins/svelte-app-entry';
 import { loadTemplate } from './loadTemplate';
 import { listPages } from './pages';
 import { pathToUrl } from './utils';
+
 import { config } from './config';
 
 /* TYPES */
 //import { MergedRollupOptions } from 'rollup';
 
+const debug = Debug('build');
+const tailwind = require(require.resolve('tailwindcss', {paths: ['./node_modules/mangoost', process.cwd()]}));
 const mode = process.env.NODE_ENV;
 const dev = mode === 'development';
 const legacy = !!process.env.MANGOOST_LEGACY_BUILD;
@@ -62,7 +71,7 @@ const ssrPlugins = [
     }),
     svelte({
         dev,
-        emitCss: true,      // when emitCss is true, css files are imported in the bunlde and Rollup need an additional plugin to load them
+        emitCss: true,      // when emitCss is true, css files are imported in the bundle by rollup-plugin-svelte and Rollup need an additional plugin to load them; check docs/rollup-plugin-svelte.md
         hydratable: true,
         generate: 'ssr'
     }),
@@ -147,10 +156,18 @@ async function renderPage(page: string){
         input: pageEntryPoint,
         plugins: [
             ...ssrPlugins,
+            // postcss 
             postcss({
-                // postCSS extracts file relatively to the bundle path. 
+                // rollup-plugin-postcss extracts styles relatively to the bundle path. 
                 // The css file will be saved in the same folder as the bundle
-                extract: basename(cssFile)
+                //extract: basename(cssFile),
+                plugins: [
+                    atImport(),
+                    postcssUrl(),
+                    postcssInputRange(),
+                    autoprefixer(config.autoprefixer),
+                    tailwind && config.enableTailwind ? tailwind() : null,
+                ]
             }),
         ],
         preserveEntrySignatures: true, // if false, svelte's component code is empty
@@ -161,11 +178,12 @@ async function renderPage(page: string){
         format: 'cjs',
         name: 'index-ssr'
     }
-
+    debug('rollup bundle', page)
     const bundle = await rollup(ssrInputOptions as any);
+    // The generate is required to get the code in cjs format; However, it will trigger a 2nd execution of all the rollup-plugins
     const { output } = await bundle.generate(ssrOutputOptions as any);
 
-    // Check if rendered page has a css file inject in the final html
+    // Check if rendered page has a css file to inject in the final html
     for(const watchFile of bundle.watchFiles){
         if(watchFile.includes(cssFile)){
             includeCss = true;

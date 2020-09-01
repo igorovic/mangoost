@@ -1,11 +1,15 @@
 import { projectRootPath } from './utils';
 
+
 export const config = {
+    apiCallsCache: 30,  // cache api calls results; in seconds
+    autoprefixer: {},
+    enableTailwind: true,
+    ExpectedDirecotires: ["public", "src/pages", "src/styles", "src/javascripts"],
     outDir: 'public',
     pages: 'src/pages',
     projectRoot: projectRootPath(),
-    apiCallsCache: 30,               // cache api calls results; in seconds
-    ExpectedDirecotires: ["public", "src/pages", "src/styles", "src/javascripts"]
+    stylesOutDir: null,             // set the output directory if you want all styles in the same folder. They will still be relative to the main outDir.
 }
 
 export default config;
