@@ -37,11 +37,7 @@ const external = [
     'lru-cache',
     'object-sizeof',
     'debug',
-    'sapper/dist/build',
-    'sapper/dist/export',
-    'sapper/dist/index',
     'rollup',
-    'rollup/dist/shared/mergeOptions',
     /* '../rollup-plugins/svelte-ssr',
     '../rollup-plugins/svelte' */
     'mangoost'

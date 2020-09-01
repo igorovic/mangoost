@@ -2,57 +2,41 @@ import path from 'path';
 import MagicString from 'magic-string';
 
 /* TYPES */
-import { Plugin/*, RenderedChunk*/, NormalizedOutputOptions, OutputBundle, InputOptions } from 'rollup';
+import { Plugin,/*, RenderedChunk*//* , NormalizedOutputOptions, OutputBundle, */ InputOptions } from 'rollup';
 
-export default function addSveltePageApp(): Plugin {
+export default function addSveltePageApp(options: {[s:string]: any} = {}): Plugin {
     const pageAppLookup = new Map();
-    const pageAppComponents = new Map();
-
+    const props = options.initialProps ? options.initialProps : {};
+    const target = options.target ? options.target : "document.getElementById('mangoost')";
 	return {
         name: 'svelte-page-app-entry',
         options(options: InputOptions){
-            //@ts-ignore
             const input = options.input; // ? options.input[0] : null;
             if(typeof input === 'string' && input.endsWith('.svelte')){
                 const id = input;
                 const appId = path.join(path.dirname(id), path.basename(id, path.extname(id)) + '.js')
-                pageAppComponents.set(appId, path.basename(id));
-                /* this.emitFile({
-                    type: 'chunk',
-                    id: appId,
-                    fileName: path.basename(appId),
-                    preserveSignature: false,
-                }); */
-                pageAppLookup.set(appId, null);
+                pageAppLookup.set(appId, {code: null, componentName: path.basename(id)});
                 options.input = appId;
             }
-            /* if(typeof input === 'string' && input.endsWith('MangoostPageApp.js')){
-                pageAppComponents.set(input, 'index.svelte');
-                pageAppLookup.set(input, null);
-                
-            } */
             return options;
         },
         load(id: string) {
-            let code = null;
             if(pageAppLookup.has(id)){
-                code =  pageAppLookup.get(id);
+                const { code, componentName} = pageAppLookup.get(id);
                 if(!code){
-                    const componentName = pageAppComponents.get(id);
                     const code = `
                     import App from './${componentName}';
+
                     const app = new App({
-                        target: document.getElementById('mangoost'),
+                        target: ${target},
                         hydrate: true,
-                        props: {
-                            name: "world"
-                        }
+                        props: ${JSON.stringify(props)}
                     });
                     export default app;
                     `
                     const magicString = new MagicString(code);
                     const appCode = { code: magicString.toString(), map: magicString.generateMap({ source: path.basename(id), hires: true }) };
-                    pageAppLookup.set(id, appCode);
+                    pageAppLookup.set( id, {code: appCode, componentName});
                     return appCode;
                 }
                 return code;
@@ -64,16 +48,16 @@ export default function addSveltePageApp(): Plugin {
             }
             console.log(importee, importer)
         },
-        generateBundle(_: NormalizedOutputOptions, bundle: OutputBundle) {
-            /* for (const [key, value] of Object.entries(bundle)) {
-                //@ts-ignore
-                if(pageAppLookup.has(value.facadeModuleId)){
-                    //@ts-ignore
-                    this.emitFile({ type: 'asset', fileName: key+'-app.js', source: value.code });
-                    delete bundle[key];
-                }
-            }; */
+        /* generateBundle(_: NormalizedOutputOptions, bundle: OutputBundle) {
+            // for (const [key, value] of Object.entries(bundle)) {
+            //     //@ts-ignore
+            //     if(pageAppLookup.has(value.facadeModuleId)){
+            //         //@ts-ignore
+            //         this.emitFile({ type: 'asset', fileName: key+'-app.js', source: value.code });
+            //         delete bundle[key];
+            //     }
+            // };
             console.log(Object.keys(bundle))
-        }
+        } */
 	};
 }
