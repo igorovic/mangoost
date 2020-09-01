@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'fs';
+import { readdirSync, readFileSync, statSync } from 'fs';
 import * as path from 'path';
 
 export function WalkSync(Path: string, prefix?: string, options={ignoreDirs: false}){
@@ -34,4 +34,14 @@ export function listDirectories(Path: string){
 
 export function readFile(filePath: string){
     return readFileSync(filePath, {encoding: 'utf8'}).toString();
+}
+
+export function exists(file: string) {
+	try {
+		statSync(file);
+		return true;
+	} catch (err) {
+		if (err.code === 'ENOENT') return false;
+		throw err;
+	}
 }

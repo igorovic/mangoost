@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { readFileSync } from 'fs';
 import { outputFileSync } from 'fs-extra';
 import { basename, dirname, extname, join } from 'path';
 import requireFromString from 'require-from-string';
@@ -16,6 +15,7 @@ import { terser } from 'rollup-plugin-terser';
 import svelte from 'rollup-plugin-svelte';
 //import svelte from '../rollup-plugins/svelte';
 import addSveltePageApp from '../rollup-plugins/svelte-app-entry';
+import { loadTemplate } from './loadTemplate';
 import { listPages } from './pages';
 import { pathToUrl } from './utils';
 import { config } from './config';
@@ -27,8 +27,7 @@ const mode = process.env.NODE_ENV;
 const dev = mode === 'development';
 const legacy = !!process.env.MANGOOST_LEGACY_BUILD;
 
-
-const template = readFileSync(join('node_modules/mangoost/templates/', 'default.html'), 'utf-8'); 
+const template = loadTemplate();
 
 console.log("DEV", dev);
 
@@ -63,14 +62,9 @@ const ssrPlugins = [
     }),
     svelte({
         dev,
-        emitCss: false,
+        emitCss: true,
         hydratable: true,
         generate: 'ssr'
-    }),
-    postcss({
-        extract: true,
-        // Or with custom file name
-        //extract: path.resolve('dist/my-custom-file-name.css')
     }),
     resolve({
         browser: false,
@@ -85,8 +79,9 @@ const browserPlugins = [
     }),
     svelte({
         dev,
-        emitCss: true,
+        emitCss: false,
         hydratable: true,
+        css: (_: string) => {null /* tricks the plugin not to import css files in the bundle since they are emitted in the SSR rendering */}
     }),
     resolve({
         browser: true,
@@ -143,12 +138,20 @@ async function renderPage(page: string){
         pageEntryPoint,
         pagePath,
         pageName
-     } = _pageParts(page);
+    } = _pageParts(page);
+
+    const cssFile = join(pagePath, pageName+'.css');
+    let includeCss = false;
 
     let ssrInputOptions = {
         input: pageEntryPoint,
         plugins: [
             ...ssrPlugins,
+            postcss({
+                // postCSS extracts file relatively to the bundle path. 
+                // The css file will be saved in the same folder as the bundle
+                extract: basename(cssFile)
+            }),
         ],
         preserveEntrySignatures: true, // if false, svelte's component code is empty
     }
@@ -161,7 +164,16 @@ async function renderPage(page: string){
 
     const bundle = await rollup(ssrInputOptions as any);
     const { output } = await bundle.generate(ssrOutputOptions as any);
-    // Writes ssr bundle on disk only in dev mode
+
+    // Check if rendered page has a css file inject in the final html
+    for(const watchFile of bundle.watchFiles){
+        if(watchFile.includes(cssFile)){
+            includeCss = true;
+            break;
+        }
+    }
+
+    // Writes ssr bundle on disk only if dev is true
     dev && await bundle.write(ssrOutputOptions as any);
     let rendered = {
         html: '',
@@ -192,9 +204,22 @@ async function renderPage(page: string){
         console.error("Mangoost SSR bundle error");
         console.error(err)
     }
-    const {html, head } = rendered;
+    // don't care about css since it's extracted in separate file
+    let { html, head } = rendered;
+
+    if(!html || html.length <= 0){
+        html = '<!-- empty mangoost html -->';
+    }
     
-    let source = template.replace('%mangoost.html%', html).replace('%mangoost.head%', head);
+    let source = template.replace('%mangoost.html%', `<div id="mangoost">${html}</div>` ).replace('%mangoost.head%', head || '<!-- empty mangoost head -->');
+
+    if(includeCss){
+        source = source.replace('%mangoost.css%', `<link rel="stylesheet" href="${pathToUrl(cssFile)}">`)
+    }else{
+        // If the page has no styles
+        source = source.replace('%mangoost.css%', '');
+    }
+
     if(!pageModule.StaticOnly){
         const scriptUrl = pathToUrl(join(pagePath, pageName+'.js'));
         source = source.replace('%mangoost.app%', '<script defer src="'+scriptUrl+'"></script>');
@@ -208,7 +233,7 @@ async function renderPage(page: string){
 async function buildPage(page: string){
     try{
         /* SSR
-        ** ssr renderPage is required before pageApp because it will extract initialData
+        ** ssr renderPage must occur before pageApp because it will extract build context
         */
         const { 
             StaticOnly
