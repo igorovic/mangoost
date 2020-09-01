@@ -62,7 +62,7 @@ const ssrPlugins = [
     }),
     svelte({
         dev,
-        emitCss: true,
+        emitCss: true,      // when emitCss is true, css files are imported in the bunlde and Rollup need an additional plugin to load them
         hydratable: true,
         generate: 'ssr'
     }),
@@ -124,7 +124,7 @@ async function pageApp(page: string){
         preserveEntrySignatures: true,
     }
     const browserOutputOptions = {
-        file: join(config.outDir, pagePath, pageName+'.js'), //'public/index.js',
+        file: join(config.outDir, pagePath, pageName+'.js'), 
         format: 'iife',
         name: 'app',
         sourcemap: true,
