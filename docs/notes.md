@@ -1,1 +1,0 @@
-- Using `sapper` requires to install rollup and dependencies in the project. I wonder if we could use `rollup` from mangoost package.
