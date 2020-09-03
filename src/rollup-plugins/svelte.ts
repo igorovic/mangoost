@@ -1,12 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as relative from 'require-relative';
-import { version } from 'svelte/package.json';
 import { createFilter } from 'rollup-pluginutils';
-import { encode, decode } from 'sourcemap-codec';
+import { decode, encode } from 'sourcemap-codec';
+import { version } from 'svelte/package.json';
+
 
 /* TYPES */
-import { Plugin, NormalizedOutputOptions, OutputBundle } from 'rollup';
+import { NormalizedOutputOptions, OutputBundle, Plugin } from 'rollup';
 
 
 const major_version = +version[0];

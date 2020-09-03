@@ -12,12 +12,23 @@ declare module 'ejs';
 declare module 'html-minifier';
 declare module 'fs-extra';
 declare module 'svelte';
+//declare module 'svelte/compiler';
 declare module 'sourcemap-codec';
 declare module 'require-from-string';
 declare module 'rollup/dist/shared/mergeOptions';
 declare module 'rollup-plugin-svelte';
 declare module 'postcss-input-range';
 declare module 'parcel-bundler';
+
+/* declare modules for rollup source code  */
+declare module 'acorn-class-fields';
+declare module 'acorn-numeric-separator';
+declare module 'acorn-static-class-features';
+declare module 'micromatch';
+declare module 'hash.js/lib/hash/sha/256';
+
+
+
 //declare module 'mangoost/dist/rollup-plugins/svelte';
 //declare module 'mangoost/dist/rollup-plugins/svelte-ssr';
 //declare module 'mangoost/dist/rollup-plugins/'
