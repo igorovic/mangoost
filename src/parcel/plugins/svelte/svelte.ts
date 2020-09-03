@@ -1,15 +1,18 @@
+import { join } from 'path';
+import requireFromString from 'require-from-string';
+
 import { Asset, generateName } from '../utils';
 import { compile, preprocess } from 'svelte/compiler';
-
+import { config as MangoostConfig } from '../../../lib/config';
 
 class SvelteAsset extends Asset {
-  constructor(name: any, pkg: any, options: any) {
-    super(name, pkg, options);
+  constructor(name: any, options: any) {
+    super(name, options);
     this.type = 'js';
   }
 
   async getConfig() {
-    const customOptions = (await super.getConfig(['.svelterc', 'svelte.config.js'], { packageKey: 'svelte' })) || {};
+    const customOptions = (await super.getConfig(['svelte.config.js'], { packageKey: 'svelte' })) || {};
 
     // Settings for the compiler that depend on parcel.
     const parcelCompilerOptions = {
@@ -28,8 +31,14 @@ class SvelteAsset extends Asset {
     return { compiler, preprocess };
   }
 
+  /* async parse(code: string) {
+    return code;
+  } */
+
   async generate() {
+    console.log("SvelteAsset generate")
     const config = await this.getConfig();
+    console.log(config);
 
     if (config.preprocess) {
       const preprocessed = await preprocess(this.contents, config.preprocess, { filename: config.compiler.filename });
@@ -40,8 +49,10 @@ class SvelteAsset extends Asset {
       }
       this.contents = preprocessed.toString();
     }
-
+    
     const { js, css } = compile(this.contents, config.compiler);
+    const pageModule = requireFromString(js.code, config.compiler.filename, {appendPaths: join(MangoostConfig.projectRoot, './node_modules')}); 
+    const { html } = pageModule.render();
 
     if (this.options.sourceMaps) {
       js.map.sources = [this.relativeName];
@@ -53,6 +64,10 @@ class SvelteAsset extends Asset {
         type: 'js',
         value: js.code,
         sourceMap: this.options.sourceMaps ? js.map : undefined
+      },
+      {
+        type: 'html',
+        value: html
       }
     ];
 

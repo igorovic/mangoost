@@ -3,6 +3,8 @@ import Bundler from 'parcel-bundler';
 
 import { config } from './config';
 
+console.log(require.resolve('parcel-bundler'));
+
 export async function build(){
     const entryFile = join(config.projectRoot, config.pages, 'index.svelte');
     console.log(entryFile);
@@ -13,7 +15,7 @@ const options = {
     outFile: 'index.js', // The name of the outputFile
     publicUrl: '/', // The url to serve on, defaults to '/'
     watch: false, // Whether to watch the files and rebuild them on change, defaults to process.env.NODE_ENV !== 'production'
-    cache: true, // Enabled or disables caching, defaults to true
+    cache: false, // Enabled or disables caching, defaults to true
     cacheDir: '.cache', // The directory cache gets put in, defaults to .cache
     contentHash: false, // Disable content hash from being included on the filename
     global: 'moduleName', // Expose modules as UMD under this name, disabled by default
@@ -36,7 +38,7 @@ const options = {
   };
 
     const bundler = new Bundler(entryFile, options as any);
-    console.log(require.resolve('../parcel/plugins/svelte/svelte.js'));
+    console.log('addAssetType', require.resolve('../parcel/plugins/svelte/svelte.js'));
     bundler.addAssetType('svelte', require.resolve('../parcel/plugins/svelte/svelte.js'))
     try{
         await bundler.bundle();
