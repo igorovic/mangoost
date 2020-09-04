@@ -2,6 +2,7 @@ import * as path from 'path';
 import url from 'url';
 
 export function projectRootPath(){
+    // TODO: Maybe should use process.cwd() here
     return path.normalize(path.dirname(path.resolve('package.json')));
 }
 
